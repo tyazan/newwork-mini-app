@@ -8,8 +8,8 @@
 - **feedback**: add/list feedback; optional AI polish
 - **absence**: create absence request (REQUESTED)
 - **ai**: TextPolisher port with two adapters:
-1. OpenAIPolisher (remote; uses OpenAI Chat Completions)
-2. LocalPolisher (deterministic fallback; no network)
+  1. OpenAIPolisher (remote; uses OpenAI Chat Completions)
+  2. LocalPolisher (deterministic fallback; no network)
 - **common**: errors, utils, configuration
 
 ## Layers
@@ -22,13 +22,17 @@
 - Simulated via headers `X-Demo-Role` and `X-Demo-UserId`
 - Roles: `MANAGER`, `OWNER`, `COWORKER`
 - Access rules:
-  - MANAGER/OWNER -> full employee fields; can update
-  - COWORKER -> redacted employee fields; can create feedback
+  - **MANAGER** → full fields; can update any employee
+  - **OWNER** → full fields; can update only their own record (id matches `X-Demo-UserId`)
+  - **COWORKER** → redacted employee fields; can create feedback
+- Absence: create allowed by OWNER (self) and MANAGER; others → 403
+- Feedback: `authorId` is taken from `X-Demo-UserId` (demo)
 
 ## Data Redaction
 Sensitive fields (e.g., `salary`, `dob`) are omitted for coworkers via DTO projection in the mapper layer.
 
 ## AI Usage
+
 ### Purpose
 Polish free-text feedback before persisting. This is optional; the app functions without external AI.
 

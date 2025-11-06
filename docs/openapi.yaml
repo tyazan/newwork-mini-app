@@ -138,6 +138,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Absence'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -180,27 +182,28 @@ components:
   schemas:
     EmployeeView:
       type: object
-      description: >
-        Employee view. Some fields may be **omitted** when the requester is a COWORKER.
+      description: Employee view; salary and dob are null for COWORKER.
       properties:
-        id:        { type: integer, format: int64 }
-        firstName: { type: string }
-        lastName:  { type: string }
-        email:     { type: string, format: email }
-        title:     { type: string }
-        department:{ type: string }
-        dob:       { type: string, format: date, nullable: true }
-        salary:    { type: number, format: double, nullable: true }
-        phone:     { type: string, nullable: true }
-      required: [id, firstName, lastName, title, department]
+        id:         { type: integer, format: int64 }
+        name:       { type: string }
+        email:      { type: string, format: email }
+        title:      { type: string }
+        department: { type: string }
+        dob:        { type: string, format: date, nullable: true }
+        salary:     { type: number, format: double, nullable: true }
+      required: [id, name, email, title, department]
 
     EmployeeUpdate:
       type: object
       properties:
-        title:     { type: string }
-        department:{ type: string }
-        phone:     { type: string }
+        name:       { type: string }
+        email:      { type: string, format: email }
+        department: { type: string }
+        title:      { type: string }
+        salary:     { type: number, format: double }
+        dob:        { type: string, format: date }
       additionalProperties: false
+
 
     FeedbackItem:
       type: object
@@ -208,13 +211,14 @@ components:
         id:         { type: integer, format: int64 }
         employeeId: { type: integer, format: int64 }
         authorId:   { type: integer, format: int64 }
-        rawText:    { type: string }
+        text:       { type: string }
         polishedText:
           type: string
           nullable: true
-          description: May be null if polish=false or polishing failed/fell back.
+          description: May be null if polish=false or fallback used.
         createdAt:  { type: string, format: date-time }
-      required: [id, employeeId, authorId, rawText, createdAt]
+      required: [id, employeeId, authorId, text, createdAt]
+
 
     CreateFeedbackRequest:
       type: object

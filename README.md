@@ -6,8 +6,6 @@ Designed as a **modular monolith** so it’s easy to integrate now and split lat
 **Tech & Run targets**
 - Backend: Java 21 + Spring Boot (Web, Data JPA, H2). Build with Maven 3.9+.
 - Frontend: React + Vite + TypeScript.
-
-**Tech & Run targets**
 .
 ├─ backend/      # Spring Boot API (H2 seed data)
 ├─ frontend/     # Vite/React SPA
@@ -35,42 +33,55 @@ The SPA serves on `http://localhost:5173` and calls the backend at `http://local
 ## Enable OpenAI polish (optional):
 
 ### PowerShell (Windows):
+```bash
 $env:AI_BASE_URL = "https://api.openai.com/v1"
 $env:AI_API_KEY  = "<your-openai-key>"
 $env:AI_CHAT_MODEL = "gpt-4o-mini"
 $env:AI_TIMEOUT = "30"
 mvn -q spring-boot:run
+```
 
 ### CMD (Windows):
+```bash
 set AI_BASE_URL=https://api.openai.com/v1
 set AI_API_KEY=<your-openai-key>
 set AI_CHAT_MODEL=gpt-4o-mini
 set AI_TIMEOUT=30
 mvn -q spring-boot:run
+```
 
 ### macOS/Linux:
+```bash
 export AI_BASE_URL=https://api.openai.com/v1
 export AI_API_KEY=<your-openai-key>
 export AI_CHAT_MODEL=gpt-4o-mini
 export AI_TIMEOUT=30
 mvn -q spring-boot:run
-
+```
 
 ### Demo users / roles (simulated)
 Use the **role switcher** in the top-right of the SPA or send headers:
 - `X-Demo-Role`: `MANAGER` | `OWNER` | `COWORKER`
 - `X-Demo-UserId`: requester numeric id (e.g. `2`)
 
+### Roles & permissions
+- **MANAGER**: see & edit **any** employee; can create absence for anyone (demo).
+- **OWNER**: see & edit **only their own** record (`X-Demo-UserId == {id}`).
+- **COWORKER**: read-only redacted view (no salary/DOB); can post feedback.
+
 ### Endpoints (subset)
 - `GET /api/v1/employees/{id}` → returns full or redacted view by role & identity
-- `PUT /api/v1/employees/{id}` → allowed for MANAGER/OWNER
+- `PUT /api/v1/employees/{id}` → update employee (allowed: MANAGER; OWNER only for their own id)
 - `GET /api/v1/employees/{id}/feedback`
 - `POST /api/v1/employees/{id}/feedback` → `{ text, polish: boolean }`
 - `POST /api/v1/employees/{id}/absences`
 
 ### AI polish
-Optional Hugging Face Inference API (free tier). Set env var `HF_TOKEN` and (optionally) `HF_MODEL`.
-If not present, a **local fallback** polish is used so the app always runs.
+The backend uses a pluggable **TextPolisher**:
+- **OpenAIPolisher** (server-side) if `AI_API_KEY` is set
+- **LocalPolisher** fallback (no network) if not set
+
+The app is fully runnable without external AI.
 
 ### Architecture (short)
 [React/Vite SPA] --CORS--> [Spring Boot API] --(optional)--> [OpenAI Chat Completions]
