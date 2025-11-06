@@ -1,0 +1,16 @@
+# IDE/editor junk anywhere in the repo
+**/.idea/
+**/.vscode/
+*.iml
+
+# Node / build
+frontend/node_modules/
+frontend/dist/
+
+# Maven / Java
+backend/target/
+
+# Env files
+*.env
+backend/.env
+frontend/.env

@@ -1,0 +1,260 @@
+openapi: 3.0.3
+info:
+  title: NEWWORK Mini-App API
+  version: 0.2.0
+servers:
+  - url: http://localhost:8080
+
+paths:
+  /api/v1/employees/{id}:
+    get:
+      summary: Get employee view (fields may be redacted by role)
+      description: |
+        Returns an employee DTO. Some sensitive fields (e.g., salary, dob) may be omitted
+        for non-privileged roles (COWORKER). Role is simulated via headers.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+        - $ref: '#/components/parameters/XDemoRole'
+        - $ref: '#/components/parameters/XDemoUserId'
+      responses:
+        '200':
+          description: Employee view DTO (possibly redacted)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeView'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update employee (MANAGER/OWNER)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+        - $ref: '#/components/parameters/XDemoRole'
+        - $ref: '#/components/parameters/XDemoUserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeUpdate'
+      responses:
+        '200':
+          description: Updated employee view
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeView'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/employees/{id}/feedback:
+    get:
+      summary: List feedback for an employee
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: List of feedback items (most recent first)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeedbackItem'
+    post:
+      summary: Add feedback (optionally polished by AI)
+      description: |
+        If `polish=true` and server has `AI_API_KEY` configured, the text is polished using
+        OpenAI. Otherwise a local fallback polisher is used.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+        - $ref: '#/components/parameters/XDemoRole'
+        - $ref: '#/components/parameters/XDemoUserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFeedbackRequest'
+            examples:
+              withPolish:
+                value: { text: "this are bad sentence for a demo", polish: true }
+              withoutPolish:
+                value: { text: "Great collaborator on the Q4 release.", polish: false }
+      responses:
+        '201':
+          description: Created feedback
+          headers:
+            Location:
+              description: URL of the created resource
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/employees/{id}/absences:
+    post:
+      summary: Create absence request
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+        - $ref: '#/components/parameters/XDemoRole'
+        - $ref: '#/components/parameters/XDemoUserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAbsenceRequest'
+            example:
+              startDate: "2025-12-01"
+              endDate: "2025-12-05"
+              reason: "Annual leave"
+      responses:
+        '201':
+          description: Created absence request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Absence'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  parameters:
+    XDemoRole:
+      in: header
+      name: X-Demo-Role
+      required: false
+      schema:
+        type: string
+        enum: [MANAGER, OWNER, COWORKER]
+    XDemoUserId:
+      in: header
+      name: X-Demo-UserId
+      required: false
+      schema:
+        type: integer
+        format: int64
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    EmployeeView:
+      type: object
+      description: >
+        Employee view. Some fields may be **omitted** when the requester is a COWORKER.
+      properties:
+        id:        { type: integer, format: int64 }
+        firstName: { type: string }
+        lastName:  { type: string }
+        email:     { type: string, format: email }
+        title:     { type: string }
+        department:{ type: string }
+        dob:       { type: string, format: date, nullable: true }
+        salary:    { type: number, format: double, nullable: true }
+        phone:     { type: string, nullable: true }
+      required: [id, firstName, lastName, title, department]
+
+    EmployeeUpdate:
+      type: object
+      properties:
+        title:     { type: string }
+        department:{ type: string }
+        phone:     { type: string }
+      additionalProperties: false
+
+    FeedbackItem:
+      type: object
+      properties:
+        id:         { type: integer, format: int64 }
+        employeeId: { type: integer, format: int64 }
+        authorId:   { type: integer, format: int64 }
+        rawText:    { type: string }
+        polishedText:
+          type: string
+          nullable: true
+          description: May be null if polish=false or polishing failed/fell back.
+        createdAt:  { type: string, format: date-time }
+      required: [id, employeeId, authorId, rawText, createdAt]
+
+    CreateFeedbackRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+        polish:
+          type: boolean
+          default: false
+      required: [text]
+
+    CreateAbsenceRequest:
+      type: object
+      properties:
+        startDate: { type: string, format: date }
+        endDate:   { type: string, format: date }
+        reason:    { type: string }
+      required: [startDate, endDate, reason]
+
+    Absence:
+      type: object
+      properties:
+        id:         { type: integer, format: int64 }
+        employeeId: { type: integer, format: int64 }
+        startDate:  { type: string, format: date }
+        endDate:    { type: string, format: date }
+        reason:     { type: string }
+        status:
+          type: string
+          enum: [REQUESTED, APPROVED, REJECTED]
+          default: REQUESTED
+        createdAt:  { type: string, format: date-time }
+      required: [id, employeeId, startDate, endDate, reason, status, createdAt]
+
+    Problem:
+      type: object
+      description: RFC7807-style problem details (simplified)
+      properties:
+        status: { type: integer }
+        error:  { type: string }
+        message:{ type: string }
+        path:   { type: string }
