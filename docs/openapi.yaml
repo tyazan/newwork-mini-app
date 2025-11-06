@@ -237,7 +237,7 @@ components:
         startDate: { type: string, format: date }
         endDate:   { type: string, format: date }
         reason:    { type: string }
-      required: [startDate, endDate, reason]
+      required: [startDate, endDate] 
 
     Absence:
       type: object

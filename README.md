@@ -35,25 +35,16 @@ The SPA serves on `http://localhost:5173` and calls the backend at `http://local
 ### PowerShell (Windows):
 ```bash
 $env:AI_BASE_URL = "https://api.openai.com/v1"
-$env:AI_API_KEY  = "<your-openai-key>"
+$env:AI_API_KEY  = "your-openai-key"
 $env:AI_CHAT_MODEL = "gpt-4o-mini"
 $env:AI_TIMEOUT = "30"
-mvn -q spring-boot:run
-```
-
-### CMD (Windows):
-```bash
-set AI_BASE_URL=https://api.openai.com/v1
-set AI_API_KEY=<your-openai-key>
-set AI_CHAT_MODEL=gpt-4o-mini
-set AI_TIMEOUT=30
 mvn -q spring-boot:run
 ```
 
 ### macOS/Linux:
 ```bash
 export AI_BASE_URL=https://api.openai.com/v1
-export AI_API_KEY=<your-openai-key>
+export AI_API_KEY=your-openai-key
 export AI_CHAT_MODEL=gpt-4o-mini
 export AI_TIMEOUT=30
 mvn -q spring-boot:run

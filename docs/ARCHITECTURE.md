@@ -40,7 +40,7 @@ Polish free-text feedback before persisting. This is optional; the app functions
 - Application code depends on the port TextPolisher.
 - At runtime, a Spring bean chooses:
   - OpenAIPolisher if **AI_API_KEY** is present
-  -LocalPolisher otherwise (keeps the app fully runnable)
+  - LocalPolisher otherwise (keeps the app fully runnable)
 
 ### Configuration (Spring application.yml)
 ```bash
