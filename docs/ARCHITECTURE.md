@@ -39,12 +39,15 @@ Polish free-text feedback before persisting. This is optional; the app functions
   -LocalPolisher otherwise (keeps the app fully runnable)
 
 ### Configuration (Spring application.yml)
+```bash
 app:
   ai:
     baseUrl: ${AI_BASE_URL:https://api.openai.com/v1}
     apiKey:  ${AI_API_KEY:}                 # empty => LocalPolisher
     chatModel: ${AI_CHAT_MODEL:gpt-4o-mini}
     timeoutSeconds: ${AI_TIMEOUT:30}
+```
+
 ### Environment variables
 - AI_BASE_URL – default https://api.openai.com/v1
 - AI_API_KEY – OpenAI API key (if unset → fallback)
