@@ -1,5 +1,5 @@
-export type Role = 'MANAGER' | 'OWNER' | 'COWORKER'
-const BASE_URL = 'http://localhost:8080'; // direct
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+export type Role = 'MANAGER' | 'OWNER' | 'COWORKER';
 
 export async function api(path: string, opts: RequestInit = {}, role: Role = 'COWORKER', userId = 2) {
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -10,6 +10,7 @@ export async function api(path: string, opts: RequestInit = {}, role: Role = 'CO
       ...(opts.headers || {}),
     },
     ...opts,
-  })
-  return res.json()
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
 }

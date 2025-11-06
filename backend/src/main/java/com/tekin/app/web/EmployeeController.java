@@ -2,6 +2,7 @@ package com.tekin.app.web;
 
 import com.tekin.app.domain.Employee;
 import com.tekin.app.infra.EmployeeRepository;
+import com.tekin.app.web.dto.EmployeeUpdateDto;
 import com.tekin.app.web.dto.EmployeeViewDto;
 import com.tekin.app.web.mapper.EmployeeMapper;
 import com.tekin.app.web.util.RequestContext;
@@ -29,22 +30,31 @@ public class EmployeeController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Employee> updateEmployee(@PathVariable("id") Long id,
-                                                   @RequestBody Employee updated,
-                                                   HttpServletRequest req) {
+    public ResponseEntity<EmployeeViewDto> updateEmployee(@PathVariable("id") Long id,
+                                                          @RequestBody EmployeeUpdateDto body,
+                                                          HttpServletRequest req) {
         String role = RequestContext.role(req);
-        if (!"MANAGER".equalsIgnoreCase(role) && !"OWNER".equalsIgnoreCase(role)) {
+        Long requesterId = RequestContext.userId(req);
+        boolean isManager = "MANAGER".equals(role);
+        boolean isOwner   = "OWNER".equals(role) && requesterId != null && requesterId.equals(id);
+
+        if (!(isManager || isOwner)) {
             return ResponseEntity.status(403).build();
         }
-        return employeeRepository.findById(id)
-                .map(e -> {
-                    e.setName(updated.getName());
-                    e.setEmail(updated.getEmail());
-                    e.setDepartment(updated.getDepartment());
-                    e.setTitle(updated.getTitle());
-                    e.setSalary(updated.getSalary());
-                    e.setDob(updated.getDob());
-                    return ResponseEntity.ok(employeeRepository.save(e));
-                }).orElse(ResponseEntity.notFound().build());
+
+        return employeeRepository.findById(id).map(e -> {
+            // full replace (or do null-checks if you want partial updates)
+            e.setName(body.name());
+            e.setEmail(body.email());
+            e.setDepartment(body.department());
+            e.setTitle(body.title());
+            e.setSalary(body.salary());
+            e.setDob(body.dob());
+            employeeRepository.save(e);
+
+            // return view using same redaction logic (manager/owner will see everything)
+            EmployeeViewDto dto = EmployeeMapper.toView(e, role, requesterId);
+            return ResponseEntity.ok(dto);
+        }).orElse(ResponseEntity.notFound().build());
     }
 }
